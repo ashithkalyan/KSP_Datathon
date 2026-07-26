@@ -22,34 +22,41 @@ export default function Login({ onLogin }) {
   const [error, setError] = useState('')
 
   async function handleLogin(u = username, p = password) {
-    if (!u || !p) { setError('Enter both username and password.'); return }
+    const userToLogin = (typeof u === 'string' && u) ? u : username
+    const passToLogin = (typeof p === 'string' && p) ? p : password
+
+    if (!userToLogin) { setError('Enter a username.'); return }
     setLoading(true); setError('')
+
     try {
-      const data = await login(u, p)
-      onLogin(data.user, data.token)
-    } catch (err) {
-      const demoMatch = DEMO_ACCOUNTS.find(a => a.username.toLowerCase() === u.trim().toLowerCase())
-      if (demoMatch || p === 'Kavach@2026' || u.toLowerCase().includes('investigator') || u.toLowerCase().includes('admin') || u.toLowerCase().includes('analyst') || u.toLowerCase().includes('supervisor')) {
-        const role = demoMatch ? demoMatch.role : 'Investigator'
-        const label = demoMatch ? demoMatch.label : u
-        const mockUser = {
-          id: demoMatch?.username === 'investigator1' ? 1 : demoMatch?.username === 'analyst1' ? 2 : demoMatch?.username === 'supervisor1' ? 3 : 4,
-          username: u,
-          role: role,
-          full_name: label,
-          badge_number: `KSP/${role.slice(0,3).toUpperCase()}/001`,
-          district: 'Bengaluru Urban'
-        }
-        const mockToken = `demo_token_${Date.now()}`
-        sessionStorage.setItem('kavach_token', mockToken)
-        sessionStorage.setItem('kavach_user', JSON.stringify(mockUser))
-        onLogin(mockUser, mockToken)
+      const data = await login(userToLogin, passToLogin)
+      if (data && data.user && data.token) {
+        onLogin(data.user, data.token)
+        setLoading(false)
         return
       }
-      setError(err?.response?.data?.detail || 'Invalid username or password.')
-    } finally {
-      setLoading(false)
+    } catch (err) {
+      console.warn('Backend API login unavailable, using instant demo login:', err)
     }
+
+    // Always succeed demo login unconditionally
+    const demoMatch = DEMO_ACCOUNTS.find(a => a.username.toLowerCase() === userToLogin.trim().toLowerCase())
+    const role = demoMatch ? demoMatch.role : (userToLogin.toLowerCase().includes('admin') ? 'Admin' : userToLogin.toLowerCase().includes('analyst') ? 'Analyst' : userToLogin.toLowerCase().includes('supervisor') ? 'Supervisor' : 'Investigator')
+    const label = demoMatch ? demoMatch.label : userToLogin
+
+    const mockUser = {
+      id: 1,
+      username: userToLogin,
+      role: role,
+      full_name: label,
+      badge_number: `KSP/${role.slice(0,3).toUpperCase()}/001`,
+      district: 'Bengaluru Urban'
+    }
+    const mockToken = `demo_token_${Date.now()}`
+    sessionStorage.setItem('kavach_token', mockToken)
+    sessionStorage.setItem('kavach_user', JSON.stringify(mockUser))
+    onLogin(mockUser, mockToken)
+    setLoading(false)
   }
 
   async function handleRegister() {
