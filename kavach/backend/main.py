@@ -29,6 +29,42 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
 DB_PATH = os.getenv("DB_PATH", "kavach.db")
 
 
+def ensure_db_initialized():
+    """Ensures database schema, AuthSession, and demo user accounts exist on fresh boot (e.g. /tmp/kavach.db)."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Users'")
+        table_exists = cur.fetchone()[0] > 0
+        if table_exists:
+            cur.execute("SELECT COUNT(*) FROM Users")
+            user_count = cur.fetchone()[0]
+            if user_count > 0:
+                auth.init_schema(conn)
+                conn.close()
+                return
+        conn.close()
+
+        print(f"[KAVACH] Initializing and seeding database at {DB_PATH}...")
+        import seed_data
+        conn = sqlite3.connect(DB_PATH)
+        seed_data.create_schema(conn)
+        L = seed_data.seed_reference_data(conn)
+        cases = seed_data.seed_cases(conn, L, count=150)
+        raw_accused, _ = seed_data.seed_accused(conn, L, cases)
+        seed_data.cluster_and_seed_identities(conn, L, raw_accused)
+        auth.init_schema(conn)
+        conn.close()
+        print("[KAVACH] Database successfully initialized with demo accounts!")
+    except Exception as e:
+        print(f"[KAVACH] DB init note: {e}")
+
+
+@app.on_event("startup")
+def startup_event():
+    ensure_db_initialized()
+
+
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
