@@ -1,0 +1,9 @@
+{
+  "name": "kavach-project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install-all": "npm --prefix frontend install",
+    "build": "npm --prefix frontend run build"
+  }
+}
