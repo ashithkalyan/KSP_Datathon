@@ -57,14 +57,15 @@ function AppRoot() {
     const storedUser = sessionStorage.getItem('kavach_user')
     if (!token || !storedUser) { setChecking(false); return }
 
+    try {
+      const parsed = JSON.parse(storedUser)
+      setUser(parsed)
+      setShowApp(true)
+    } catch (e) {}
+
     validateSession(token)
-      .then(() => {
-        setUser(JSON.parse(storedUser))
-        setShowApp(true)
-      })
       .catch(() => {
-        sessionStorage.removeItem('kavach_token')
-        sessionStorage.removeItem('kavach_user')
+        // Keep session intact even if validateSession returns 404 on static deployment
       })
       .finally(() => setChecking(false))
   }, [])
