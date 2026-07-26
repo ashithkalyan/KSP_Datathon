@@ -73,12 +73,9 @@ function AppRoot() {
   const handleLogin = (u, token) => {
     sessionStorage.setItem('kavach_user', JSON.stringify(u))
     sessionStorage.setItem('kavach_token', token)
-    // A fresh login always starts a clean conversation — see
-    // CrimeChat.jsx, which restores from this key on mount. Without
-    // clearing it here, signing out and back in on the same shared
-    // terminal would silently resume the previous officer's chat.
     sessionStorage.removeItem('kavach_active_chat_session')
     setUser(u)
+    setShowApp(true)  // ← go straight to dashboard, skip the cinematic gate
   }
 
   // Fired when the officer picks a room in the station hub, after the
