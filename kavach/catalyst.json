@@ -1,0 +1,25 @@
+{
+  "app_name": "kavach-ksp",
+  "project_type": "web",
+  "regions": ["IN"],
+  "functions": [
+    {
+      "name": "kavach-api",
+      "language": "python3.9",
+      "handler": "main.handler",
+      "memory": 512,
+      "timeout": 30,
+      "env_variables": {
+        "DB_PATH": "/tmp/kavach.db",
+        "DEMO_MODE": "false"
+      }
+    }
+  ],
+  "hosting": [
+    {
+      "name": "kavach-ui",
+      "folder": "frontend/dist",
+      "default_file": "index.html"
+    }
+  ]
+}
